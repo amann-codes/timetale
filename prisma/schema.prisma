@@ -22,6 +22,8 @@ model User {
   emailVerified DateTime?
   image         String?
   Account       Account[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Account {
@@ -42,4 +44,12 @@ model Account {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model schedule {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  schedule  Json[]
+  userId    String   @map("user_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
