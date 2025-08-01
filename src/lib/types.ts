@@ -4,6 +4,14 @@ export type SignUp = {
   password: string;
 };
 
-export type Schedule = {
-  tasks?: string;
+export type SchedulePOST = {
+  userId: string;
+  description: string;
+};
+
+export type ScheduleGET = {
+  id: string;
+  title: string;
+  dateTime: string;
+  duration: string;
 };
