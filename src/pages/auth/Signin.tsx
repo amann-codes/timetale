@@ -19,7 +19,7 @@ interface SignInForm {
 export default function SignIn() {
   const session = useSession();
   if (session?.status == "authenticated") {
-    redirect("/team");
+    redirect("/schedule");
   }
   const {
     register,
@@ -33,15 +33,13 @@ export default function SignIn() {
         redirect: false,
         email: data.email,
         password: data.password,
-        callbackUrl: "/team",
+        callbackUrl: "/schedule",
       });
-      console.log(res);
-      if (res?.ok) {
-        toast("Logged in successfully redirecting to dashboard");
-        setTimeout(()=>redirect('/'), 200)
-      }
+      console.log("res", res);
       if (res?.error == "CredentialsSignin") {
         toast.error("Incorrect password or email address");
+      } else {
+        setTimeout(() => redirect("/schedule"), 200);
       }
     } catch (e) {
       toast.error("An unexpected error occurred", {
@@ -55,14 +53,14 @@ export default function SignIn() {
       <div className="w-full max-w-xs p-5 bg-white border-2 border-gray-400 rounded-lg shadow-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div className="space-y-1">
-            <Label htmlFor="email" className="font-mono text-xs font-medium">
+            <Label htmlFor="email" className="text-xs font-medium">
               Email
             </Label>
             <Input
               id="email"
               type="email"
               placeholder="user@example.com"
-              className="font-mono text-xs h-9"
+              className="text-xs h-9"
               {...register("email", {
                 required: "Email is required",
                 pattern: {
@@ -72,20 +70,20 @@ export default function SignIn() {
               })}
             />
             {errors.email && (
-              <p className="text-destructive text-xs font-mono">
+              <p className="text-destructive text-xs ">
                 {errors.email.message}
               </p>
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="password" className="font-mono text-xs font-medium">
+            <Label htmlFor="password" className=" text-xs font-medium">
               Password
             </Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••"
-              className="font-mono text-xs h-9"
+              className=" text-xs h-9"
               {...register("password", {
                 required: "Password is required",
                 minLength: {
@@ -95,14 +93,14 @@ export default function SignIn() {
               })}
             />
             {errors.password && (
-              <p className="text-destructive text-xs font-mono">
+              <p className="text-destructive text-xs ">
                 {errors.password.message}
               </p>
             )}
           </div>
           <Button
             type="submit"
-            className="w-full font-mono text-xs text-white h-9 bg-black"
+            className="w-full  text-xs text-white h-9 bg-black"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
