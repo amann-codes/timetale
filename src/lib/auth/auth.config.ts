@@ -1,15 +1,13 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma";
 import { NextAuthConfig } from "next-auth";
-import Google from "next-auth/providers/google";
-import { compare } from 'bcryptjs';
+import { compare } from "bcryptjs";
 import Credentials from "next-auth/providers/credentials";
 const prisma = new PrismaClient();
 export const authOptions = {
   debug: true,
   adapter: PrismaAdapter(prisma),
   providers: [
-    Google,
     Credentials({
       name: "Credentials",
       credentials: {
@@ -71,8 +69,8 @@ export const authOptions = {
       return session;
     },
   },
-  pages:{
-    signIn:'/signin'
+  pages: {
+    signIn: "/signin",
   },
   session: {
     strategy: "jwt",
