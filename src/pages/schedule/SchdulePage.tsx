@@ -1,159 +1,160 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ScheduleGET } from "@/lib/types";
-import { AddTaskForm } from "./AddTaskForm";
+import { TaskInput } from "./task-input";
+import { FlairCreator } from "./flair-input";
+import { ScheduleTimeline } from "./timeline";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScheduleDOC, Flair } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { getContrastTextColor } from "@/lib/utils";
+import { FlairList } from "./flairlist";
 
-type GroupedTasks = {
-  [date: string]: ScheduleGET[];
-};
 
-export default function SchedulePage() {
+export default function TaskScheduler() {
   const { data: session } = useSession();
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['schedule', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return [];
-      const response = await fetch(`/api/schedule?userId=${session.user.id}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data?.schedule || [];
+  const userId = session?.user?.id;
+  const queryClient = useQueryClient();
+
+  const createSchedule = useMutation({
+    mutationFn: async ({ userId, description, flairIds }: { userId?: string; description: string, flairIds?: string[] }) => {
+      const response = await fetch(`${process.env.BACKEND_URL}/api/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, description, flairIds }),
+      });
+      return response.json();
     },
-    enabled: !!session?.user?.id,
+    onSuccess: (newSchedule) => {
+      queryClient.setQueryData(["schedule", userId], (old: ScheduleDOC[] = []) => [...old, newSchedule]);
+    },
   });
 
-  const groupedTasks = useMemo(() => {
-    return (data || []).reduce((acc: GroupedTasks, task: ScheduleGET) => {
-      const date = new Date(task.dateTime).toISOString().split("T")[0]; // 'YYYY-MM-DD'
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(task);
-      return acc;
-    }, {});
-  }, [data]);
+  const getSchedule = useQuery({
+    queryKey: ["schedule", userId],
+    queryFn: async ({ queryKey }): Promise<ScheduleDOC> => {
+      const [_, userId] = queryKey;
+      const res = await fetch(`${process.env.BACKEND_URL}/api/schedule?userId=${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return new Promise((resolve) => {
+        setTimeout(async () => { resolve(await res.json()) }, 8000)
+      })
+    },
+    enabled: !!userId,
+  });
 
-  const uniqueDates = Object.keys(groupedTasks);
+  const createFlair = useMutation({
+    mutationFn: async ({ userId, name, description, color }: { userId?: string; name: String; description: string; color: string }) => {
+      console.log("UserId before POST request at create flair", userId)
+      const response = await fetch(`${process.env.BACKEND_URL}/api/flairs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, name, description, color }),
+      });
+      return response.json();
+    },
+    onSuccess: (newFlair) => {
+      queryClient.setQueryData(["flair", userId], (old: Flair[] = []) => [...old, newFlair]);
+    },
+  });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              Your Schedule
-            </CardTitle>
-            <p className="text-center text-gray-500">Loading tasks...</p>
-          </CardHeader>
-          <CardContent>
-            <AddTaskForm />
-          </CardContent>
-        </Card>
-      </div>
-    );
+  const getFlairs = useQuery({
+    queryKey: ["flairs", userId],
+    queryFn: async ({ queryKey }): Promise<Flair[]> => {
+      const [_, userId] = queryKey;
+      const res = await fetch(`${process.env.BACKEND_URL}/api/flairs?userId=${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return new Promise((resolve) => {
+        setTimeout(async () => { resolve(await res.json()) }, 8000)
+      })
+    },
+    enabled: !!userId,
+  });
+
+  const patchFlair = useMutation({
+    mutationFn: async ({ id, name, description, color }: { id?: string; name: string; description: string; color: string }) => {
+      const response = await fetch(`${process.env.BACKEND_URL}/api/flairs`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name, description, color }),
+      });
+      return response.json();
+    },
+    onSuccess: (newFlair) => {
+      queryClient.setQueryData(["udpatedFlair", userId], (old: Flair[] = []) => [...old, newFlair]);
+    },
+  });
+
+  const addTask = (description: string, flairIds?: string[]) => {
+    createSchedule.mutate({ userId: session?.user?.id, description, flairIds });
+  };
+
+  const addFlair = (name: string, description: string, color: string) => {
+    createFlair.mutate({ userId: session?.user?.id, name, description, color })
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              Your Schedule
-            </CardTitle>
-            <p className="text-center text-red-500">Error fetching tasks: {error.message}</p>
-          </CardHeader>
-          <CardContent>
-            <AddTaskForm />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!data?.length) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              Your Schedule
-            </CardTitle>
-            <p className="text-center text-gray-500">No tasks scheduled yet.</p>
-          </CardHeader>
-          <CardContent>
-            <AddTaskForm />
-          </CardContent>
-        </Card>
-      </div>
-    );
+  const updateFlair = (id: string, name: string, description: string, color: string) => {
+    patchFlair.mutate({ id, name, description, color })
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-3xl w-full space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              Your Schedule
-            </CardTitle>
-            <Tabs defaultValue={uniqueDates[0]} className="mt-4">
-              <TabsList className="flex justify-center flex-wrap bg-gray-200 p-1 rounded mx-auto">
-                {uniqueDates.map((date) => (
-                  <TabsTrigger key={date} value={date} className="p-2">
-                    {new Date(date).toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                      timeZone: "UTC",
-                    })}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {uniqueDates.map((date, index) => (
-                <TabsContent key={index} value={date} className="mt-4">
-                  <div className="space-y-2">
-                    {groupedTasks[date].map((task: ScheduleGET, index2: number) => (
-                      <Card
-                        key={index2}
-                        className="p-3 bg-white border border-gray-100 rounded-lg"
-                      >
-                        <div className="flex flex-col space-y-1">
-                          <h4 className="text-sm font-medium text-gray-800">
-                            {task.title}
-                          </h4>
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>Duration: {task.duration}</span>
-                            <span>
-                              Time:{" "}
-                              {new Date(task.dateTime).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            <AddTaskForm />
-          </CardContent>
-        </Card>
-      </div>
+    <div className="h-screen bg-gray-50 overflow-hidden">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        <ResizablePanel
+          defaultSize={35}
+          minSize={30}
+          className="h-full bg-gray-50 p-6 border-r border-gray-200"
+        >
+          <div className="h-full">
+            <div className="mb-3">
+              <h1 className="text-2xl font-bold text-gray-900">Task Scheduler</h1>
+              <p className="text-gray-600 mt-1 text-sm">Organize your day</p>
+            </div>
+            <div className="space-y-4">
+              <TaskInput onAddTask={addTask}
+                disable={!(getFlairs.data && getSchedule.data)}
+                flairs={getFlairs.data || []}
+              />
+
+              {
+                getFlairs.data && <FlairList onUpdateFlair={updateFlair} flairs={getFlairs.data} />
+              }
+
+              <FlairCreator onAddFlair={addFlair} />
+            </div>
+          </div>
+        </ResizablePanel>
+
+        <ResizableHandle className="bg-gray-300 hover:bg-gray-400" />
+
+        <ResizablePanel defaultSize={65} className="h-full p-3">
+          <div className="overflow-y-auto px-6 h-full">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 m-0 p-0">Your Schedule</h2>
+              <p className="text-gray-600 my-2">All your upcoming tasks and events</p>
+            </div>
+            {
+              getSchedule.isLoading && <div className="h-screen flex items-center justify-center">Loading schedules...</div>
+            }
+            {
+              getSchedule.data?.schedule && <ScheduleTimeline schedule={getSchedule.data.schedule} />
+            }
+            {
+              getSchedule.isError && <div className="h-screen flex items-center justify-center">Error loading schedules: {getSchedule.error?.message}</div>
+            }
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
