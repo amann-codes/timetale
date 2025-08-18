@@ -1,79 +1,97 @@
+'use server'
 import generateSchedule, { ScheduleItem } from "@/lib/gemini/generateSchedule";
-import { SchedulePOST } from "@/lib/types";
-import { NextRequest, NextResponse } from "next/server";
+import { CreateSchedule } from "@/lib/types";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "../../../../generated/prisma";
-
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
-    const body: SchedulePOST = await req.json();
-    const { userId, description } = body;
+    const body: CreateSchedule = await req.json();
+    console.log("body received", body);
+    const { userId, description, flairIds } = body;
+
     const inputDate = new Date();
     if (isNaN(inputDate.getTime())) {
-      throw new Error('Invalid date format');
+      return NextResponse.json({ message: 'Internal server error: Invalid date' }, { status: 500 });
     }
-    const startOfDay = new Date(inputDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(inputDate.setHours(23, 59, 59, 999));
-
     const existingSchedule = await prisma.schedule.findFirst({
       where: {
         userId,
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      }
+      },
     });
 
+    console.log("Existing schedule check:", existingSchedule);
+
     if (existingSchedule) {
-      const updatedSchedule = await generateSchedule(description, existingSchedule.schedule as ScheduleItem[]);
-      const update = await prisma.schedule.update({
+      console.log("Updating existing schedule...");
+      const updatedSchedule = await generateSchedule(description, flairIds, existingSchedule.schedule as ScheduleItem[])
+
+      if (!updatedSchedule || 'error' in updatedSchedule) {
+        console.error("Failed to generate updated schedule:", updatedSchedule);
+        return NextResponse.json({ message: "Error generating updated schedule from AI." }, { status: 500 });
+      }
+
+      const updateResult = await prisma.schedule.update({
         where: {
           id: existingSchedule.id
         },
         data: {
           schedule: updatedSchedule
         }
-      })
-      return NextResponse.json(update)
+      });
+      console.log("updated schedule at line 61", updateResult)
+      return NextResponse.json(updateResult);
+
+    } else {
+      console.log("Creating new schedule...");
+      const newSchedule = await generateSchedule(description, flairIds);
+
+      if (!newSchedule || 'error' in newSchedule) {
+        console.error("Failed to generate new schedule:", newSchedule);
+        return NextResponse.json({ message: "Error generating new schedule from AI." }, { status: 500 });
+      }
+
+      const createResult = await prisma.schedule.create({
+        data: {
+          userId,
+          schedule: newSchedule,
+        },
+      });
+
+      return NextResponse.json(createResult);
     }
 
-    const response = await generateSchedule(description);
-    const createSchedule = await prisma.schedule.create({
-      data: {
-        userId,
-        schedule: response,
-      },
-    });
-
-    return NextResponse.json(createSchedule);
   } catch (e) {
-    throw new Error(`error during generation process ${e}`);
+    console.error("Error during schedule processing:", e);
+    return NextResponse.json({ message: `An error occurred during the generation process. ${e}` }, { status: 500 });
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
   try {
-    const userId = req.nextUrl.searchParams.get("userId");
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+
     if (!userId) {
-      return NextResponse.json(
-        { status: 409 },
-        { statusText: "user id and day is required" }
-      );
+      return NextResponse.json({ message: "User ID is required" }, { status: 400 });
     }
-    const response = await prisma.schedule.findFirst({
+
+    const schedule = await prisma.schedule.findFirst({
       where: {
         userId,
       },
+      orderBy: {
+        createdAt: 'desc',
+      }
     });
+    if (!schedule) {
+      return NextResponse.json({ message: "No schedule found for today." }, { status: 404 });
+    }
 
-    return Response.json(response);
+    return NextResponse.json(schedule);
   } catch (e) {
-    console.log(e);
-    return NextResponse.json(
-      { status: 500 },
-      { statusText: `Error getting schedule: ${e}` }
-    );
+    console.error("Error getting schedule:", e);
+    return NextResponse.json({ message: `Error getting schedule` }, { status: 500 });
   }
 }
