@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { getFlair } from "@/lib/gemini/actions/getFlair";
 import { Schedule } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
-import { FlairBadge } from "@/pages/schedule/FlairBadge";
+import { FlairBadge } from "@/components/pages/schedule/FlairBadge";
 import { Suspense } from "react";
 
 export function ScheduleTimeline({ schedule }: { schedule: Schedule[] }) {
