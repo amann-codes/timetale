@@ -1,28 +1,93 @@
+
 "use server";
+import { getFlair } from '@/lib/gemini/actions/getFlair';
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, GenerationConfig, SchemaType } from "@google/generative-ai";
 
-const ai = new GoogleGenAI({});
+
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is not set in environment variables.");
+}
+const genAI = new GoogleGenerativeAI(apiKey);
+
 
 export type ScheduleItem = {
-  // The 'id' property is not part of the AI's output, so we can omit it from the core type used here.
-  // It's likely added later when saving to a database.
   title: string;
   dateTime: string;
   duration: string;
+  flairId?: string;
 };
+
+export type Flair = {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+}
+
+export type ScheduleError = {
+  error: string;
+};
+
+async function getFlairDetailsByIds(ids: string[]): Promise<Flair[]> {
+  const flairPromises = ids.map(async (id) => await getFlair(id));
+  const flairs = await Promise.all(flairPromises);
+  return flairs.filter((flair): flair is Flair => flair !== undefined && flair !== null);
+}
 
 export default async function generateSchedule(
   description: string,
+  flairIds: string[],
   currentSchedule?: ScheduleItem[]
-) {
+): Promise<ScheduleItem[] | ScheduleError> {
   try {
-    const hasExistingSchedule = currentSchedule && currentSchedule.length > 0;
+    if (!description && (!flairIds || flairIds.length === 0)) {
+      return { error: "A description or at least one flair ID is required to generate a schedule." };
+    }
 
-    const promptContext = hasExistingSchedule
+    let descriptionPromptPart = "";
+    let flairPromptPart = "";
+
+    if (flairIds && flairIds.length > 0) {
+      const flairDetails = await getFlairDetailsByIds(flairIds);
+      if (flairDetails && flairDetails.length > 0) {
+        flairPromptPart = `
+                **Source 1: Pre-defined Flair Tasks**
+                Create tasks directly from the 'description' field of each flair object listed here. These are pre-defined tasks.
+                - **Flair Details:**
+                \`\`\`json
+                ${JSON.stringify(flairDetails, null, 2)}
+                \`\`\`
+                - **Creation Rule:** For each flair, create a task. Every task created from a flair MUST include that flair's 'id' in the 'flairId' field of the final task object.
+            `;
+      } else if (!description) {
+        return { error: "Could not find details for the provided flair IDs." };
+      }
+    }
+
+    if (description) {
+      descriptionPromptPart = `
+            **Source 2: User's Custom Request**
+            Create tasks based on the following natural language description.
+            - **Description:** "${description}"
+            - **Association Rule:** When creating these tasks, if flair details are available, you should associate each task with the most relevant flair ID. If no flair seems relevant, you can omit the flairId for that specific task.
+        `;
+    }
+
+    const schedulingFocusPrompt = `
+      **Your Goal:** You will create schedule items from the sources listed below. You must merge all generated tasks together and with the existing schedule without creating time conflicts.
+
+      ${flairPromptPart}
+      ${descriptionPromptPart}
+    `;
+
+    const hasExistingSchedule = currentSchedule && currentSchedule.length > 0;
+    const existingScheduleContext = hasExistingSchedule
       ? `
         **Existing Schedule Context:**
-        The user already has the following tasks scheduled. You MUST add the new tasks from the description to this schedule without creating any time conflicts. The existing schedule is:
+        The user already has tasks scheduled. You MUST add new tasks to this schedule without creating time conflicts.
+        The existing schedule is:
         \`\`\`json
         ${JSON.stringify(currentSchedule, null, 2)}
         \`\`\`
@@ -30,11 +95,10 @@ export default async function generateSchedule(
         `
       : `
         **Goal:**
-        Your goal is to create a new schedule based on the user's description.
-        Your final output must be a JSON array containing the new tasks, sorted chronologically.
+        Create a new schedule based on the user's request.
+        Your final output must be a JSON array of the new tasks, sorted chronologically.
         `;
 
-    // --- FIX: Provide a clearer, more human-readable date context ---
     const currentDateForAI = new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -42,87 +106,81 @@ export default async function generateSchedule(
       day: 'numeric',
     });
 
-    const payload = {
-      contents: [
-        {
-          parts: [
-            {
-              text: `
-                You are an intelligent task scheduler. Your primary goal is to take a user's natural language description and convert it into a structured schedule.
+    const fullPrompt = `
+      You are an intelligent task scheduler. Your primary goal is to convert a user's request into a structured schedule.
 
-                ${promptContext}
+      ${existingScheduleContext}
 
-                **Current Date Context:** For reference, the user is making this request on **${currentDateForAI}**. Use this date as the anchor for relative terms like "today," "tomorrow," or "next week."
+      ${schedulingFocusPrompt}
 
-                **Required Task Structure:**
-                Each task in the generated schedule MUST be an object with the following properties:
-                - \`title\`: A concise and specific title for the task (e.g., "Prepare Project Presentation").
-                - \`dateTime\`: The precise start time in ISO 8601 format ('YYYY-MM-DDTHH:MM:SSZ').
-                - \`duration\`: The duration of the task (e.g., "1 hour", "30 minutes"). Assume a reasonable default if not specified.
+      **Current Date Context:** For reference, the user is making this request on **${currentDateForAI}**. Use this as an anchor for relative terms like "today" or "tomorrow."
 
-                **Crucial Scheduling Rules:**
-                1.  **Date Priority**: This is the most important rule. You **MUST** prioritize any specific date (e.g., "on July 25th", "August 1st") or relative date (e.g., "tomorrow", "next Monday") mentioned by the user for a task. Only if a task has **no date information at all** should you default to the "Current Date Context".
-                2.  **Strict Non-Overlap**: Ensure that no two tasks in the final schedule have overlapping time slots. If a new task conflicts with an existing one, adjust its start time to the earliest available slot *after* the conflicting task.
-                3.  **Time Interpretation**:
-                    * "in the morning": 09:00 AM to 12:00 PM.
-                    * "before evening": Before 17:00 (5:00 PM).
-                    * "at 6 pm": Precisely 18:00.
-                4.  **Default Start Time**: If a task has no specific time, default its start to 09:00 AM or the next available slot.
+      **Required Task Structure:**
+      Each task in the generated schedule MUST be an object with these properties:
+      - \`title\`: A concise title for the task (e.g., "Prepare Project Presentation").
+      - \`dateTime\`: The precise start time in ISO 8601 format ('YYYY-MM-DDTHH:MM:SSZ').
+      - \`duration\`: The task's duration (e.g., "1 hour", "30 minutes").
+      - \`flairId\`: The string ID of the flair this task is associated with.
 
-                **IMPORTANT: Your response MUST be ONLY the JSON array. DO NOT include any markdown formatting (like \`\`\`json) or conversational text.**
+      **Crucial Scheduling Rules:**
+      1.  **Strict Non-Overlap**: No two tasks should have overlapping times. Adjust new tasks to the earliest available slot if a conflict arises.
+      2.  **Date Priority**: Prioritize specific dates ("July 25th") or relative dates ("next Monday") mentioned by the user. Default to the "Current Date Context" only if no date is specified.
+      3.  **Time Interpretation**: "morning" is 09:00-12:00, "afternoon" is 13:00-17:00, "evening" is 18:00-21:00.
 
-                User's New Task Description: "${description}"
-              `,
-            },
-          ],
-        },
+      **IMPORTANT: Your response MUST be ONLY the JSON array. DO NOT include any markdown formatting (like \`\`\`json) or conversational text.**
+    `;
+
+    const model = genAI.getGenerativeModel({
+      model: String(process.env.GEMINI_MODEL),
+      safetySettings: [
+        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
       ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              dateTime: { type: Type.STRING, format: "date-time" },
-              duration: { type: Type.STRING },
+    });
+
+    const generationConfig: GenerationConfig = {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: SchemaType.ARRAY,
+        items: {
+          type: SchemaType.OBJECT,
+          properties: {
+            title: { type: SchemaType.STRING },
+            dateTime: { type: SchemaType.STRING, format: "date-time" },
+            duration: { type: SchemaType.STRING },
+            flairId: {
+              type: SchemaType.OBJECT, properties: {
+                id: { type: SchemaType.STRING }
+              }
             },
-            required: ["title", "dateTime", "duration"],
           },
+          required: ["title", "dateTime", "duration", "flairId"],
         },
       },
     };
 
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      ...payload,
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+      generationConfig,
     });
 
-    if (typeof response.text === "string") {
-      let cleanedResponseText = response.text.trim();
-      if (
-        cleanedResponseText.startsWith("```json") &&
-        cleanedResponseText.endsWith("```")
-      ) {
-        cleanedResponseText = cleanedResponseText
-          .substring(7, cleanedResponseText.length - 3)
-          .trim();
+
+    const responseText = result.response.text();
+    if (responseText) {
+      try {
+        return JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse JSON from AI response:", responseText, parseError);
+        return { error: "Failed to parse schedule from AI. The response was not valid JSON." };
       }
-
-      const jsonResponse = JSON.parse(cleanedResponseText);
-
-      return jsonResponse;
     } else {
-      console.error("API response text was not a string:", response.text);
-      return {
-        error: "Failed to generate schedule: Unexpected API response format.",
-      };
+      console.error("API response text was empty:", result.response);
+      return { error: "Failed to generate schedule: The AI returned an empty response." };
     }
   } catch (error) {
-    console.error("Error generating schedule:", error);
-    return {
-      error: "Failed to generate schedule due to an internal server error.",
-    };
+    console.error("Error generating schedule with Gemini:", error);
+    return { error: `Failed to generate schedule due to an internal server error: ${error}` };
   }
 }
