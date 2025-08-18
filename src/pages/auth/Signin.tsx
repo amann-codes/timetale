@@ -42,9 +42,8 @@ export default function SignIn() {
         setTimeout(() => redirect("/schedule"), 200);
       }
     } catch (e) {
-      toast.error("An unexpected error occurred", {
-        description: "Error",
-      });
+      console.log("Error", e);
+      toast.error("An unexpected error occurred");
     }
   };
 
