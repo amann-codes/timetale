@@ -2,7 +2,7 @@
 
 import { Geist_Mono, Funnel_Display } from "next/font/google";
 import "./globals.css";
-import { Provider } from "@/pages/layout/Provider";
+import { Provider } from "@/components/pages/layout/Provider";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 

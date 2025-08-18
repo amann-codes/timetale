@@ -1,4 +1,4 @@
-import SchedulePage from "@/pages/schedule/SchdulePage";
+import SchedulePage from "@/components/pages/schedule/SchdulePage";
 
 export default function Page(){
   return <SchedulePage/>
