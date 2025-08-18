@@ -1,15 +1,15 @@
 'use client';
 
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Funnel_Display } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/pages/layout/Provider";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const funnelDisplay = Funnel_Display({
+  variable: "--font-funnel-display",
   subsets: ["latin"],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${funnelDisplay.variable} ${geistMono.variable} antialiased`}
       >
         <QueryClientProvider client={queryClient}>
           <Toaster position="top-center" />
