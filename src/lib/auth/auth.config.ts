@@ -1,15 +1,13 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma";
 import { NextAuthConfig } from "next-auth";
-import Google from "next-auth/providers/google";
-import { compare } from 'bcryptjs';
+import { compare } from "bcryptjs";
 import Credentials from "next-auth/providers/credentials";
 const prisma = new PrismaClient();
 export const authOptions = {
   debug: true,
   adapter: PrismaAdapter(prisma),
   providers: [
-    Google,
     Credentials({
       name: "Credentials",
       credentials: {
@@ -24,7 +22,7 @@ export const authOptions = {
           placeholder: "Password",
         },
       },
-      authorize: async (credentials: any) => {
+      authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) {
           console.log("user not found");
           return null;
@@ -43,7 +41,7 @@ export const authOptions = {
         if (
           existingUser &&
           existingUser.password &&
-          (await compare(credentials.password, existingUser.password))
+          (await compare(String(credentials.password), String(existingUser.password)))
         ) {
           console.log("signed in, user found with correct credentials");
           return {
@@ -58,7 +56,7 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    jwt: async ({ user, token }: any) => {
+    jwt: async ({ user, token }) => {
       if (user) {
         token.userId = user.id || token.sub;
       }
@@ -71,8 +69,8 @@ export const authOptions = {
       return session;
     },
   },
-  pages:{
-    signIn:'/signin'
+  pages: {
+    signIn: "/signin",
   },
   session: {
     strategy: "jwt",

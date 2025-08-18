@@ -1,44 +1,54 @@
-"use server";
-
-import { NextResponse } from "next/server";
 import { PrismaClient } from "../../../../../generated/prisma";
-import { SignUp } from "@/lib/types";
+import { NextResponse } from "next/server";
+import zod from "zod";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
-
-export async function POST(body: SignUp) {
-  if (!body || !body.email || !body.password || !body.name) {
-    return NextResponse.json({
-      status: 400,
-      statusText:
-        "Missing required fields: email, password, and name are all required",
+export async function POST(req: Request) {
+  try {
+    const userSchema = zod.object({
+      name: zod.string(),
+      email: zod.string().email(),
+      password: zod.string().min(6),
     });
-  }
-  const { name, email, password } = body;
-  const existing = await prisma.user.findFirst({
-    where: {
-      email: body.email,
-    },
-  });
-  if (existing) {
-    return NextResponse.json({
-      status: 409,
-      statusText: "user already exists",
+    const body = await req.json();
+    const { name, email, password } = userSchema.parse(body);
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email,
+      },
     });
-  }
+    if (existingUser) {
+      return NextResponse.json(
+        {
+          statusText: "User already exists with this email",
+        },
+        { status: 409 }
+      );
+    }
+    const passhash = await bcrypt.hash(password, 10);
+    const result = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: passhash,
+      },
+    });
 
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const user = await prisma.user.create({
-    data: {
-      email,
-      name,
-      password: hashedPassword,
-    },
-    select: {
-      email: true,
-      name: true,
-    },
-  });
-  return user;
+    return NextResponse.json({
+      status: "success",
+      message: "User created successfully",
+      data: {
+        userId: result.id,
+      },
+    });
+  } catch (e) {
+    console.error("Error during signup:", e);
+    return NextResponse.json(
+      { status: 500 },
+      {
+        statusText: "Failed to create user",
+      }
+    );
+  }
 }

@@ -1,5 +1,4 @@
-import NextAuth from "next-auth"
- 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [],
-})
+import NextAuth from "next-auth";
+import { authOptions } from "./auth.config";
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authOptions);
