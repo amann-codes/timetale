@@ -4,14 +4,28 @@ export type SignUp = {
   password: string;
 };
 
-export type SchedulePOST = {
+export type CreateSchedule = {
   userId: string;
   description: string;
+  flairIds: string[];
 };
 
-export type ScheduleGET = {
+export interface Flair {
+  id: string
+  name: string
+  description: string
+  color: string
+}
+
+export type Schedule = {
   id: string;
   title: string;
-  dateTime: string;
   duration: string;
-};
+  dateTime: Date;
+  flairId: string;
+}
+
+export type ScheduleDOC = {
+  id: string;
+  schedule: Schedule[];
+}
