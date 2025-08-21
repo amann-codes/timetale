@@ -10,21 +10,32 @@ export async function POST(req: Request) {
     const body: CreateSchedule = await req.json();
     console.log("body received", body);
     const { userId, description, flairIds } = body;
+    const userExists = await prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    })
+
+    if (!userExists) {
+      return NextResponse.json({
+        status: 404,
+        statusText: 'User not found with this ID'
+      })
+    }
 
     const inputDate = new Date();
+
     if (isNaN(inputDate.getTime())) {
       return NextResponse.json({ message: 'Internal server error: Invalid date' }, { status: 500 });
     }
+
     const existingSchedule = await prisma.schedule.findFirst({
       where: {
         userId,
       },
     });
 
-    console.log("Existing schedule check:", existingSchedule);
-
     if (existingSchedule) {
-      console.log("Updating existing schedule...");
       const updatedSchedule = await generateSchedule(description, flairIds, existingSchedule.schedule as ScheduleItem[])
 
       if (!updatedSchedule || 'error' in updatedSchedule) {
@@ -40,11 +51,9 @@ export async function POST(req: Request) {
           schedule: updatedSchedule
         }
       });
-      console.log("updated schedule at line 61", updateResult)
       return NextResponse.json(updateResult);
 
     } else {
-      console.log("Creating new schedule...");
       const newSchedule = await generateSchedule(description, flairIds);
 
       if (!newSchedule || 'error' in newSchedule) {
@@ -77,6 +86,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "User ID is required" }, { status: 400 });
     }
 
+    const userExists = await prisma.user.findUnique({
+      where: {
+        id: userId
+      }
+    })
+    if (!userExists) {
+      return NextResponse.json({
+        status: 404,
+        statusText: 'User not found with this ID'
+      })
+    }
+
     const schedule = await prisma.schedule.findFirst({
       where: {
         userId,
@@ -86,9 +107,8 @@ export async function GET(req: Request) {
       }
     });
     if (!schedule) {
-      return NextResponse.json({ message: "No schedule found for today." }, { status: 404 });
+      return NextResponse.json([]);
     }
-
     return NextResponse.json(schedule);
   } catch (e) {
     console.error("Error getting schedule:", e);

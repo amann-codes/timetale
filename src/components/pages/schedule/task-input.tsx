@@ -129,30 +129,31 @@ export function TaskInput({ flairs, onAddTask, disable }: TaskInputProps) {
 
             {selectedFlairs.length > 0 && (
               <div className="space-y-2">
-                <FormLabel className="text-sm font-medium text-gray-700">Selected Flairs</FormLabel>
-                <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md">
-                  {selectedFlairs.map((flair) => (
-                    <Badge
-                      key={flair.id}
-                      style={{
-                        border: `1px solid ${flair.color}`,
-                        backgroundColor: flair.color,
-                        color: getContrastTextColor(flair.color),
-                      }}
-                      className="shadow-xs text-sm flex items-center gap-1"
-                    >
-                      {flair.name}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFlair(flair.id)}
-                        className="ml-1 hover:bg-black/10 rounded-full p-0.5 transition-colors"
-                        disabled={disable}
+                <FormLabel className="text-sm font-medium text-gray-700">Selected Flairs
+                  <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md">
+                    {selectedFlairs.map((flair) => (
+                      <Badge
+                        key={flair.id}
+                        style={{
+                          border: `1px solid ${getContrastTextColor(flair.color)}`,
+                          backgroundColor: flair.color,
+                          color: getContrastTextColor(flair.color),
+                        }}
+                        className="shadow-xs text-sm flex items-center gap-1"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
+                        {flair.name}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFlair(flair.id)}
+                          className="ml-1 hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                          disabled={disable}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </FormLabel>
               </div>
             )}
 

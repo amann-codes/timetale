@@ -1,6 +1,6 @@
 
 "use server";
-import { getFlair } from '@/lib/gemini/actions/getFlair';
+import { getFlair } from '@/lib/actions/getFlair';
 
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, GenerationConfig, SchemaType } from "@google/generative-ai";
 
@@ -150,11 +150,7 @@ export default async function generateSchedule(
             title: { type: SchemaType.STRING },
             dateTime: { type: SchemaType.STRING, format: "date-time" },
             duration: { type: SchemaType.STRING },
-            flairId: {
-              type: SchemaType.OBJECT, properties: {
-                id: { type: SchemaType.STRING }
-              }
-            },
+            flairId: { type: SchemaType.STRING }
           },
           required: ["title", "dateTime", "duration", "flairId"],
         },

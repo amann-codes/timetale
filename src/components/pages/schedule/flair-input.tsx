@@ -27,7 +27,7 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
     defaultValues: {
       name: "",
       description: "",
-      color: "#69420",
+      color: "#069420",
     },
   })
 
@@ -42,7 +42,7 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
         <div className="flex items-center justify-between">
           <h3 className="font-medium text-gray-900">Create Flairs</h3>
         </div>
-        <Separator className="w-full my-2 bg-gray-400"/>
+        <Separator className="w-full my-2 bg-gray-400" />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
             <FormField
@@ -95,6 +95,7 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
                     >
                       Select a Color
                     </FormLabel>
+                    <FormMessage />
                     <FormControl>
                       <Input
                         id="colorPicker"
@@ -104,14 +105,15 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
                         {...field}
                       />
                     </FormControl>
+                    <div className="flex items-center gap-3 my-3">
+                      <div
+                        className="w-10 h-10 rounded-md border border-gray-300"
+                        style={{ backgroundColor: field.value }}
+                        aria-label={`Selected color: ${field.value}`}
+                      />
+                      <span className="text-sm text-gray-600">{field.value}</span>
+                    </div>
                   </div>
-                  <div
-                    className="w-10 h-10 rounded-md border border-gray-300"
-                    style={{ backgroundColor: field.value }}
-                    aria-label={`Selected color: ${field.value}`}
-                  />
-                  <span className="text-sm text-gray-600">{field.value}</span>
-                  <FormMessage />
                 </FormItem>
               )}
             />

@@ -19,7 +19,7 @@ interface SignInForm {
 export default function SignIn() {
   const session = useSession();
   if (session?.status == "authenticated") {
-    redirect("/schedule");
+    redirect("/");
   }
   const {
     register,
@@ -33,13 +33,12 @@ export default function SignIn() {
         redirect: false,
         email: data.email,
         password: data.password,
-        callbackUrl: "/schedule",
+        callbackUrl: "/",
       });
-      console.log("res", res);
       if (res?.error == "CredentialsSignin") {
         toast.error("Incorrect password or email address");
       } else {
-        setTimeout(() => redirect("/schedule"), 200);
+        setTimeout(() => redirect("/"), 200);
       }
     } catch (e) {
       console.log("Error", e);
