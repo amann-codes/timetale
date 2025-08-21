@@ -1,8 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Flair } from "@/lib/types"
@@ -77,12 +76,12 @@ export const FlairList = ({ flairs, onUpdateFlair }: FlairListProps) => {
     return (
         <Card>
             <CardHeader className="flex items-center">
-                <CardTitle>Your Flairs--</CardTitle>
-                {flairs && flairs.map((flair, index) => (
+                <CardTitle>Your Flairs</CardTitle>
+                {Array.isArray(flairs) && flairs?.map((flair, index) => (
                     <div key={index} className="relative group">
                         <Badge
                             style={{
-                                border: `1px solid ${flair.color}`,
+                                border: `1px solid ${getContrastTextColor(flair.color)}`,
                                 backgroundColor: flair.color,
                                 color: getContrastTextColor(flair.color),
                             }}
