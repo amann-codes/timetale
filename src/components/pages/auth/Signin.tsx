@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession, SignInResponse } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ interface SignInForm {
 
 export default function SignIn() {
   const session = useSession();
-  if (session?.status == "authenticated") {
+  if (session?.status === "authenticated") {
     redirect("/");
   }
   const {
@@ -29,16 +29,19 @@ export default function SignIn() {
 
   const onSubmit = async (data: SignInForm) => {
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
+      const res = (await signIn("credentials", {
         email: data.email,
         password: data.password,
         callbackUrl: "/",
-      });
-      if (res?.error == "CredentialsSignin") {
+      })) as SignInResponse | undefined;
+
+      if (res?.error === "CredentialsSignin") {
         toast.error("Incorrect password or email address");
-      } else {
-        setTimeout(() => redirect("/"), 200);
+      } else if (res?.ok) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        redirect("/");
+      } else if (res?.error) {
+        toast.error("An unexpected error occurred during sign-in");
       }
     } catch (e) {
       console.log("Error", e);
@@ -68,20 +71,18 @@ export default function SignIn() {
               })}
             />
             {errors.email && (
-              <p className="text-destructive text-xs ">
-                {errors.email.message}
-              </p>
+              <p className="text-destructive text-xs">{errors.email.message}</p>
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="password" className=" text-xs font-medium">
+            <Label htmlFor="password" className="text-xs font-medium">
               Password
             </Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••"
-              className=" text-xs h-9"
+              className="text-xs h-9"
               {...register("password", {
                 required: "Password is required",
                 minLength: {
@@ -91,14 +92,12 @@ export default function SignIn() {
               })}
             />
             {errors.password && (
-              <p className="text-destructive text-xs ">
-                {errors.password.message}
-              </p>
+              <p className="text-destructive text-xs">{errors.password.message}</p>
             )}
           </div>
           <Button
             type="submit"
-            className="w-full  text-xs text-white h-9 bg-black"
+            className="w-full text-xs text-white h-9 bg-black"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -112,7 +111,7 @@ export default function SignIn() {
           </Button>
           <div className="text-xs text-center">
             Don't have an account?
-            <Link className="underline ml-1" href={"/signup"}>
+            <Link className="underline ml-1" href="/signup">
               Signup
             </Link>
           </div>
