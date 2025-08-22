@@ -1,4 +1,4 @@
-export const publicRoutes = ["/si"];
+export const publicRoutes = ["/signin", "signup"];
 export const authRoutes = ["/signin", "/signup", "/api/signup"];
 export const authPrefix = "/api/auth";
-export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
+export const DEFAULT_LOGIN_REDIRECT = "/";

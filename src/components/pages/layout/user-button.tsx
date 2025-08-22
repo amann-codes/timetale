@@ -8,7 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 export function UserButton() {
     const handleSignOut = async () => {
         try {
-            await signOut({ callbackUrl: "/login" });
+            await signOut({ callbackUrl: "/signin" });
         } catch (error) {
             console.error("Sign out failed:", error);
         }
