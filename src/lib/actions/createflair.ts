@@ -1,14 +1,33 @@
 "use server";
 
-export const createFlair = async ({ userId, name, description, color }: { userId?: string; name: String; description: string; color: string }) => {
+import prisma from "@/lib/db/prisma";
+import { auth } from "../auth/auth";
+
+export const createFlair = async ({ name, description, color }: { name: string; description: string; color: string }) => {
+
     try {
-        const response = await fetch(`${process.env.BACKEND_URL}/api/flairs`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, name, description, color }),
-        });
-        return response.json();
+        const session = await auth();
+        const userId = session?.user?.id;
+
+        if (!userId) {
+            throw new Error("Authentication required to create a flair.");
+        }
+
+        const response = await prisma.flair.create({
+            data: {
+                userId, name, description, color
+            }
+        })
+
+        if (!response) {
+            console.error("Error creating flair", response)
+            throw new Error("Failed to create flair");
+        }
+
+        return response;
+
     } catch (e) {
-        throw new Error(`Error while creating your schedule: ${e}`)
+        console.error("Error creating flair", e)
+        throw new Error("Failed to create flair");
     }
 }

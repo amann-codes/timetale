@@ -1,20 +1,29 @@
 "use server";
 
-import { ScheduleDOC } from "../types";
+import { auth } from "../auth/auth";
+import { Schedule } from "../types";
 
-export const getSchedule = async (userId?: string): Promise<ScheduleDOC> => {
+import prisma from "@/lib/db/prisma"
+
+export const getSchedule = async (): Promise<Schedule[]> => {
     try {
-        const res = await fetch(
-            `${process.env.BACKEND_URL}/api/schedule?userId=${userId}`,
-            {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+        const session = await auth();
+        const userId = session?.user?.id;
+        if (!userId) {
+            throw new Error("User must sign-in to get their flair.");
+        }
+        const response = await prisma.schedule.findUnique({
+            where: {
+                userId
+            },
+            select: {
+                schedule: true
             }
-        );
-        const schedule = await res.json();
-        return schedule;
+        });
+        if (response?.schedule == null) {
+            return []
+        }
+        return response.schedule as Schedule[];
     } catch (e) {
         throw new Error(`Error occured while getting schedule: ${e}`)
     }

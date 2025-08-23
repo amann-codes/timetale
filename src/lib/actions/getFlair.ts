@@ -1,27 +1,23 @@
 "use server";
 
-import { Flair } from "@/lib/types";
+import prisma from "@/lib/db/prisma";
 
-export const getFlair = async (flairId: string): Promise<Flair> => {
-  if (!flairId) {
-    throw new Error("Flair ID is required");
-  }
+export const getFlair = async ({ flairId }: { flairId: string }) => {
   try {
-    const res = await fetch(`${process.env.BACKEND_URL}/api/flairs?flairId=${flairId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch flair: ${res.status} ${res.statusText}`);
+    const flair = await prisma.flair.findUnique({
+      where: { id: flairId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        color: true,
+      }
+    })
+    if (!flair) {
+      throw new Error(`Flair with Id: ${flairId} not found`)
     }
-    const flair: Flair = await res.json();
     return flair;
   } catch (e) {
-    console.error(`Error fetching flair with id ${flairId}:`, e);
-    throw new Error(`Unable to retrieve flair: ${e instanceof Error ? e.message : "Unknown error"}`);
+    throw new Error(`Error fethcing flair: ${e}`)
   }
 };

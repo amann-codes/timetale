@@ -1,27 +1,24 @@
 "use server";
 
+import { auth } from "../auth/auth";
 import { Flair } from "../types";
+import prisma from "@/lib/db/prisma";
 
-export const getUserFlairs = async (userId?: string): Promise<Flair[]> => {
-    if (!userId) {
-        throw new Error("User ID is required");
-    }
+export const getUserFlairs = async (): Promise<Flair[]> => {
     try {
-        const res = await fetch(`${process.env.BACKEND_URL}/api/flairs?userId=${userId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            cache: "no-store",
-        });
-
-        if (!res.ok) {
-            throw new Error(`Failed to fetch flairs: ${res.status} ${res.statusText}`);
+        const session = await auth();
+        const userId = session?.user?.id;
+        if (!userId) {
+            throw new Error("Authentication required to get flairs.");
         }
-        const flairs: Flair[] = await res.json();
+        const flairs = await prisma.flair.findMany({
+            where: { userId }
+        })
+        if (!flairs) {
+            return [];
+        }
         return flairs;
     } catch (e) {
-        console.error(`Error fetching flairs for user ${userId}:`, e);
         throw new Error(`Unable to retrieve flairs: ${e instanceof Error ? e.message : "Unknown error"}`);
     }
 };
