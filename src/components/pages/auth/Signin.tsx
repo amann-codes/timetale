@@ -29,26 +29,27 @@ export default function SignIn() {
 
   const onSubmit = async (data: SignInForm) => {
     try {
-      const res = (await signIn("credentials", {
+      const res = await signIn("credentials", {
         email: data.email,
         password: data.password,
+        redirect: false,
         callbackUrl: "/",
-      })) as SignInResponse | undefined;
+      });
 
       if (res?.error === "CredentialsSignin") {
         toast.error("Incorrect password or email address");
       } else if (res?.ok) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        redirect("/");
+        toast.success("Signed in successfully!");
+        window.location.href = '/';
       } else if (res?.error) {
-        toast.error("An unexpected error occurred during sign-in");
+        toast.error(`An error occurred: ${res.error}`);
       }
     } catch (e) {
-      console.log("Error", e);
+      console.error("Error occured while signing in", e);
       toast.error("An unexpected error occurred");
     }
   };
-
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <div className="w-full max-w-xs p-5 bg-white border-2 border-gray-400 rounded-lg shadow-sm">

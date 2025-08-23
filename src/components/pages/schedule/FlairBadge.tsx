@@ -8,9 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 export function FlairBadge({ id }: { id: string }) {
     const getFlairObject = useQuery({
         queryKey: ['flairId', id],
-        queryFn: async (): Promise<Flair> => {
-            return await getFlair(id)
-        }
+        queryFn: () => getFlair({ flairId: id })
     })
     return (
         getFlairObject.data &&

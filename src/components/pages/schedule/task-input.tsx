@@ -31,7 +31,7 @@ interface TaskInputProps {
 const taskSchema = z.object({
   description: z
     .string()
-    .min(20, "Task description is required")
+    .min(10, "Task description is required")
     .or(z.literal("")),
 })
 

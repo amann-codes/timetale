@@ -2,45 +2,51 @@
 
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { SignUp as SignUpBody } from "@/lib/types";
+import { createUser } from "@/lib/actions/createUser";
+const signUpSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Invalid email address."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
+});
+
+type SignUpBody = z.infer<typeof signUpSchema>;
 
 export default function SignUp() {
   const router = useRouter();
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<SignUpBody>();
+    formState: { errors },
+  } = useForm<SignUpBody>({
+    resolver: zodResolver(signUpSchema),
+  });
 
-  const onSubmit = async (data: SignUpBody) => {
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          password: data.password,
-        }),
+  const mutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      toast.success("Account created successfully!", {
+        description: "Please sign in to continue.",
       });
-      console.log(res);
-      if (res.ok) {
-        router.push("/signin");
-      } else {
-        toast.error("Failed to create account", {
-          description: res.statusText,
-        });
-      }
-    } catch (e) {
-      console.log("Error", e)
-      toast.error("An unexpected error occurred");
-    }
+      router.push("/signin");
+    },
+    onError: (error) => {
+      toast.error("Sign-up failed", {
+        description: error.message,
+      });
+    },
+  });
+
+  const onSubmit = (data: SignUpBody) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -48,72 +54,58 @@ export default function SignUp() {
       <div className="w-full max-w-xs p-5 bg-white border rounded-lg shadow-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div className="space-y-1">
-            <Label htmlFor="name" className=" text-xs font-medium">
+            <Label htmlFor="name" className="text-xs font-medium">
               Name
             </Label>
             <Input
               id="name"
               type="text"
               placeholder="Your name"
-              className=" text-xs h-9"
-              {...register("name", { required: "Name is required" })}
+              className="text-xs h-9"
+              {...register("name")}
             />
             {errors.name && (
-              <p className="text-destructive text-xs ">{errors.name.message}</p>
+              <p className="text-destructive text-xs">{errors.name.message}</p>
             )}
           </div>
+
           <div className="space-y-1">
-            <Label htmlFor="email" className=" text-xs font-medium">
+            <Label htmlFor="email" className="text-xs font-medium">
               Email
             </Label>
             <Input
               id="email"
               type="email"
               placeholder="user@example.com"
-              className=" text-xs h-9"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^\S+@\S+$/i,
-                  message: "Invalid email format",
-                },
-              })}
+              className="text-xs h-9"
+              {...register("email")}
             />
             {errors.email && (
-              <p className="text-destructive text-xs ">
-                {errors.email.message}
-              </p>
+              <p className="text-destructive text-xs">{errors.email.message}</p>
             )}
           </div>
+
           <div className="space-y-1">
-            <Label htmlFor="password" className=" text-xs font-medium">
+            <Label htmlFor="password" className="text-xs font-medium">
               Password
             </Label>
             <Input
               id="password"
               type="password"
               placeholder="••••••"
-              className=" text-xs h-9"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
-                },
-              })}
+              className="text-xs h-9"
+              {...register("password")}
             />
             {errors.password && (
-              <p className="text-destructive text-xs ">
-                {errors.password.message}
-              </p>
+              <p className="text-destructive text-xs">{errors.password.message}</p>
             )}
           </div>
+
           <Button
             type="submit"
-            className="w-full  text-xs h-9"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
+            className="w-full text-xs h-9"
+            disabled={mutation.isPending}           >
+            {mutation.isPending ? (
               <>
                 <p>Signing up...</p>
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -122,6 +114,7 @@ export default function SignUp() {
               "Sign Up"
             )}
           </Button>
+
           <div className="text-xs text-center">
             Already have an account?
             <Link className="underline ml-1" href={"/signin"}>

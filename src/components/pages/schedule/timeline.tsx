@@ -16,7 +16,7 @@ export function ScheduleTimeline({ schedule }: { schedule: Schedule[] }) {
                         <CardTitle className="flex justify-between text-xl font-semibold text-gray-900">
                             <p>{sched.title}</p>
                             <Suspense fallback={<Badge className="animate-pulse"></Badge>}>
-                                <FlairBadge id={sched.flairId} />
+                                {sched.flairId && <FlairBadge id={sched.flairId} />}
                             </Suspense>
                         </CardTitle>
                         <div className="flex items-center justify-between gap-4">
