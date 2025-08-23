@@ -3,6 +3,7 @@
 import { getFlair } from '@/lib/actions/getFlair';
 
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, GenerationConfig, SchemaType } from "@google/generative-ai";
+import { Schedule } from '../types';
 
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -10,14 +11,6 @@ if (!apiKey) {
   throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-
-
-export type ScheduleItem = {
-  title: string;
-  dateTime: string;
-  duration: string;
-  flairId?: string;
-};
 
 export type Flair = {
   id: string;
@@ -30,17 +23,17 @@ export type ScheduleError = {
   error: string;
 };
 
-async function getFlairDetailsByIds(ids: string[]): Promise<Flair[]> {
-  const flairPromises = ids.map(async (id) => await getFlair(id));
+async function getFlairByFlairIds(ids: string[]): Promise<Flair[]> {
+  const flairPromises = ids.map(async (id) => await getFlair({ flairId: id }));
   const flairs = await Promise.all(flairPromises);
   return flairs.filter((flair): flair is Flair => flair !== undefined && flair !== null);
 }
 
 export default async function generateSchedule(
   description: string,
-  flairIds: string[],
-  currentSchedule?: ScheduleItem[]
-): Promise<ScheduleItem[] | ScheduleError> {
+  flairIds?: string[],
+  currentSchedule?: Schedule[]
+): Promise<Schedule[] | ScheduleError> {
   try {
     if (!description && (!flairIds || flairIds.length === 0)) {
       return { error: "A description or at least one flair ID is required to generate a schedule." };
@@ -50,7 +43,7 @@ export default async function generateSchedule(
     let flairPromptPart = "";
 
     if (flairIds && flairIds.length > 0) {
-      const flairDetails = await getFlairDetailsByIds(flairIds);
+      const flairDetails = await getFlairByFlairIds(flairIds);
       if (flairDetails && flairDetails.length > 0) {
         flairPromptPart = `
                 **Source 1: Pre-defined Flair Tasks**
@@ -152,7 +145,7 @@ export default async function generateSchedule(
             duration: { type: SchemaType.STRING },
             flairId: { type: SchemaType.STRING }
           },
-          required: ["title", "dateTime", "duration", "flairId"],
+          required: ["title", "dateTime", "duration"],
         },
       },
     };
