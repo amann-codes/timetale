@@ -16,7 +16,7 @@ export function UserButton() {
     const { data: session } = useSession();
     return <div>
         <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-full border p-3 bg-gray-300">
+            <DropdownMenuTrigger className="rounded-full border p-3 bg-gray-300 cursor-pointer">
                 <User />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="px-3">

@@ -160,11 +160,11 @@ export function TaskInput({ flairs, onAddTask, disable }: TaskInputProps) {
             <Button
               type="submit"
               size="sm"
-              className="w-full h-8 bg-black text-white"
+              className="w-full h-8 bg-black text-white cursor-pointer"
               disabled={(!form.watch("description")?.trim() && selectedFlairs.length === 0) || disable}
             >
               <Plus className="w-3 h-3 mr-1" />
-              Add Task
+              Add Tasks
             </Button>
           </form>
         </Form>

@@ -121,7 +121,7 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
               type="submit"
               size="sm"
               variant="outline"
-              className="w-full h-8 bg-transparent"
+              className="w-full h-8 bg-transparent cursor-pointer"
             >
               <Palette className="w-3 h-3 mr-1" />
               Create

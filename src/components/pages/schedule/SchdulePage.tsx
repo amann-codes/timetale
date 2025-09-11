@@ -81,7 +81,7 @@ export default function TaskScheduler() {
             }
             {
               (
-                getScheduleQuery.isSuccess && getScheduleQuery.data) ? (
+                getScheduleQuery.isSuccess && getScheduleQuery.data.length > 0) ? (
                 <ScheduleTimeline schedule={getScheduleQuery.data} />
               ) : (
                 getScheduleQuery.isFetched &&
