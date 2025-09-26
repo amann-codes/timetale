@@ -10,6 +10,7 @@ import { Palette } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Separator } from "@/components/ui/separator"
+import { getContrastTextColor } from "@/lib/utils"
 
 interface FlairCreatorProps {
   onAddFlair: (name: string, description: string, color: string) => void
@@ -105,13 +106,14 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
                         {...field}
                       />
                     </FormControl>
-                    <div className="flex items-center gap-3 my-3">
-                      <div
-                        className="w-10 h-10 rounded-md border border-gray-300"
-                        style={{ backgroundColor: field.value }}
-                        aria-label={`Selected color: ${field.value}`}
-                      />
-                      <span className="text-sm text-gray-600">{field.value}</span>
+                    <div
+                      className="inline-block px-2 py-1 rounded-md text-sm border text-white"
+                      style={{ backgroundColor: field.value }}
+                      aria-label={`Selected color: ${field.value}`}
+                    >
+                      <span style={{ color: getContrastTextColor(field.value) }}>
+                        {field.value}
+                      </span>
                     </div>
                   </div>
                 </FormItem>
