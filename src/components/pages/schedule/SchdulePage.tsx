@@ -5,7 +5,7 @@ import { FlairCreator } from "./flair-input";
 import { ScheduleTimeline } from "./timeline";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ScheduleDOC, Flair } from "@/lib/types";
+import { Flair } from "@/lib/types";
 import { FlairList } from "./flairlist";
 import { getSchedule } from "@/lib/actions/getSchedule";
 import { getUserFlairs } from "@/lib/actions/getUserFlairs";
@@ -13,8 +13,15 @@ import { createFlair } from "@/lib/actions/createflair";
 import { createTask } from "@/lib/actions/createTask";
 import { patchFlair } from "@/lib/actions/patchflair";
 import { UserButton } from "../layout/user-button";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 export default function TaskScheduler() {
+  const { status } = useSession();
+
+  if (status === "unauthenticated") {
+    redirect("/");
+  }
   const queryClient = useQueryClient();
 
   const createTaskMutation = useMutation({

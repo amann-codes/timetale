@@ -9,6 +9,10 @@ export const getEndTime = ({ dateTime, duration }: { dateTime: string, duration:
   return new Date(dateTime + duration * 60000)
 }
 
+export const getInitials = (name: string) => {
+  return name.split(" ")[0].charAt(0).toUpperCase() + name.split(" ")[1].charAt(0).toUpperCase();
+}
+
 export function formatDateTime(dateTimeString: Date) {
   const date = new Date(dateTimeString);
   const day = date.getUTCDate();
