@@ -122,3 +122,83 @@
     font-family: "Funnel Display", sans-serif;
   }
 }
+
+/* FullCalendar theme: match bg-background, text-foreground, light borders */
+.fc-wrapper {
+  --fc-border-color: var(--border);
+  --fc-button-bg-color: var(--primary);
+  --fc-button-border-color: var(--primary);
+  --fc-button-hover-bg-color: var(--primary);
+  --fc-button-hover-border-color: var(--primary);
+  --fc-button-active-bg-color: var(--primary);
+  --fc-today-bg-color: var(--muted);
+  --fc-page-bg-color: var(--background);
+  --fc-neutral-bg-color: var(--background);
+  --fc-list-event-hover-bg-color: var(--accent);
+  --fc-event-bg-color: var(--primary);
+  --fc-event-border-color: var(--primary);
+}
+.fc-wrapper .fc {
+  font-family: inherit;
+}
+.fc-wrapper .fc-theme-standard td,
+.fc-wrapper .fc-theme-standard th {
+  border-color: var(--border);
+}
+.fc-wrapper .fc-scrollgrid {
+  border-color: var(--border);
+}
+.fc-wrapper .fc-col-header-cell-cushion,
+.fc-wrapper .fc-timegrid-slot-label-cushion {
+  color: var(--foreground);
+}
+.fc-wrapper .fc-timegrid-slot {
+  min-height: 2em;
+}
+.fc-wrapper .fc-event {
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+.fc-wrapper .fc-event-title {
+  font-weight: 500;
+}
+.fc-wrapper .fc-event-flair {
+  font-size: 0.7em;
+  opacity: 0.95;
+  margin-left: 2px;
+}
+.fc-wrapper .fc-gap-event {
+  background-color: #e5e7eb !important;
+  border: 1px solid #9ca3af !important;
+  border-style: dashed !important;
+  color: #374151;
+  opacity: 1;
+}
+.fc-wrapper .fc-gap-event .fc-event-title {
+  font-weight: 500;
+  color: #374151;
+}
+.fc-wrapper .fc-daygrid-event:not(.fc-gap-event) .fc-event-title {
+  color: inherit;
+}
+.fc-wrapper .fc-daygrid-event,
+.fc-wrapper .fc-daygrid-event-harness {
+  opacity: 1;
+  visibility: visible;
+}
+.fc-wrapper .fc-daygrid-day-frame {
+  overflow: visible;
+}
+.fc-wrapper .fc-daygrid-day-events {
+  min-height: 0;
+}
+.fc-wrapper .fc-timegrid-axis-cushion,
+.fc-wrapper .fc-timegrid-slot-label {
+  color: var(--muted-foreground);
+}
+.fc-wrapper .fc-datagrid-cell-cushion {
+  color: var(--foreground);
+}
+.fc-wrapper .fc-highlight {
+  background: var(--accent);
+}

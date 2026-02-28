@@ -11,17 +11,26 @@ export const patchFlair = async ({ id, name, description, color }: { id?: string
         if (!userId) {
             throw new Error("Authentication required to update a flair.");
         }
+        if (!id) {
+            throw new Error("Flair id is required.");
+        }
+
+        const existing = await prisma.flair.findFirst({
+            where: { id, userId },
+        });
+        if (!existing) {
+            throw new Error(`Flair not found or access denied: ${id}`);
+        }
 
         const response = await prisma.flair.update({
-            where: { id, userId },
-            data: {
-                name, description, color
-            }
-        })
+            where: { id },
+            data: { name, description, color },
+        });
         if (!response) {
-            throw new Error(`Could not udpate flair: ${id}`)
+            throw new Error(`Could not update flair: ${id}`);
         }
+        return response;
     } catch (e) {
-        throw new Error(`Error occured while updating flair ${id}: ${e}`)
+        throw new Error(`Error occurred while updating flair: ${e}`);
     }
 }

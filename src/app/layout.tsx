@@ -29,7 +29,7 @@ export default function RootLayout({
         className={`${funnelDisplay.variable} ${geistMono.variable} antialiased`}
       >
         <QueryClientProvider client={queryClient}>
-          <Toaster position="top-center" />
+          <Toaster position="top-right" />
           <Provider>{children}</Provider>
         </QueryClientProvider>
       </body>

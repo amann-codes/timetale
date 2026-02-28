@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -21,6 +18,8 @@ model User {
   emailVerified DateTime?
   image         String?
   Account       Account[]
+  Task          Task[]
+  Flair         Flair[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -47,25 +46,31 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-model Schedule {
-  id        String         @id @default(auto()) @map("_id") @db.ObjectId
-  schedule  ScheduleType[]
-  userId    String         @unique @map("user_id") @db.ObjectId
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+model Task {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @map("user_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String
+  start     DateTime
+  duration  Int      // minutes
+  flairId   String?  @map("flair_id") @db.ObjectId
+  flair     Flair?   @relation(fields: [flairId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, start])
 }
 
 model Flair {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String
   color       String
-  userId      String @unique @map("user_id") @db.ObjectId
-}
+  userId      String   @map("user_id") @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Task        Task[]
 
-type ScheduleType {
-  title    String
-  duration String
-  dateTime DateTime
-  flairId  String?
+  @@index([userId])
 }

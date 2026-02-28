@@ -29,9 +29,11 @@ const formSchema = z.object({
 interface FlairListProps {
     flairs: Flair[]
     onUpdateFlair: (id: string, name: string, description: string, color: string) => void
+    /** When true, render without Card (e.g. inside tabbed panel). */
+    embedded?: boolean
 }
 
-export const FlairList = ({ flairs, onUpdateFlair }: FlairListProps) => {
+export const FlairList = ({ flairs, onUpdateFlair, embedded }: FlairListProps) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [selectedFlair, setSelectedFlair] = useState<Flair | null>(null)
 
@@ -73,32 +75,44 @@ export const FlairList = ({ flairs, onUpdateFlair }: FlairListProps) => {
         reset()
     }
 
+    const badges = (
+        <>
+            {Array.isArray(flairs) && flairs?.map((flair, index) => (
+                <div key={flair.id ?? index} className="relative group">
+                    <Badge
+                        style={{
+                            border: `1px solid ${getContrastTextColor(flair.color)}`,
+                            backgroundColor: flair.color,
+                            color: getContrastTextColor(flair.color),
+                        }}
+                        className="shadow-xs mx-1 text-base transition-all group-hover:pr-6"
+                    >
+                        {flair.name}
+                    </Badge>
+                    <button
+                        onClick={() => handleEditClick(flair)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Edit ${flair.name}`}
+                    >
+                        <Pencil style={{ color: getContrastTextColor(flair.color) }} className="w-4 h-4 mr-1 hover:cursor-pointer" />
+                    </button>
+                </div>
+            ))}
+        </>
+    )
+
     return (
-        <Card>
-            <CardHeader className="flex items-center">
-                <CardTitle>Your Flairs</CardTitle>
-                {Array.isArray(flairs) && flairs?.map((flair, index) => (
-                    <div key={index} className="relative group">
-                        <Badge
-                            style={{
-                                border: `1px solid ${getContrastTextColor(flair.color)}`,
-                                backgroundColor: flair.color,
-                                color: getContrastTextColor(flair.color),
-                            }}
-                            className="shadow-xs mx-1 text-sm transition-all group-hover:pr-6"
-                        >
-                            {flair.name}
-                        </Badge>
-                        <button
-                            onClick={() => handleEditClick(flair)}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            aria-label={`Edit ${flair.name}`}
-                        >
-                            <Pencil style={{ color: getContrastTextColor(flair.color) }} className="w-4 h-4 mr-1 hover:cursor-pointer" />
-                        </button>
-                    </div>
-                ))}
-            </CardHeader>
+        <>
+            {embedded ? (
+                <div className="flex flex-wrap items-center gap-1.5">{badges}</div>
+            ) : (
+                <Card>
+                    <CardHeader className="flex items-center">
+                        <CardTitle>Your Flairs</CardTitle>
+                        {badges}
+                    </CardHeader>
+                </Card>
+            )}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -205,6 +219,6 @@ export const FlairList = ({ flairs, onUpdateFlair }: FlairListProps) => {
                     </Form>
                 </DialogContent>
             </Dialog>
-        </Card>
+        </>
     )
 }

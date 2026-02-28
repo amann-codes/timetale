@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Palette } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -14,6 +14,8 @@ import { getContrastTextColor } from "@/lib/utils"
 
 interface FlairCreatorProps {
   onAddFlair: (name: string, description: string, color: string) => void
+  /** When true, render without Card (e.g. inside tabbed panel). */
+  embedded?: boolean
 }
 
 const formSchema = z.object({
@@ -22,7 +24,7 @@ const formSchema = z.object({
   color: z.string().min(1, "Color is required"),
 })
 
-export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
+export function FlairCreator({ onAddFlair, embedded }: FlairCreatorProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,27 +39,21 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
     form.reset()
   }
 
-  return (
-    <Card>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-gray-900">Create Flairs</h3>
-        </div>
-        <Separator className="w-full my-2 bg-gray-400" />
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
+  const formContent = (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
+                  <FormLabel className="text-base font-medium text-gray-700">
                     Flair name
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Flair name"
-                      className="text-sm h-8"
+                      className="text-base h-9"
                       {...field}
                     />
                   </FormControl>
@@ -70,13 +66,13 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
+                  <FormLabel className="text-base font-medium text-gray-700">
                     Description
                   </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Description"
-                      className="text-sm h-8"
+                      className="text-base h-9"
                       {...field}
                     />
                   </FormControl>
@@ -92,7 +88,7 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
                   <div className="flex items-center gap-2">
                     <FormLabel
                       htmlFor="colorPicker"
-                      className="text-sm font-medium text-gray-700"
+                      className="text-base font-medium text-gray-700"
                     >
                       Select a Color
                     </FormLabel>
@@ -107,7 +103,7 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
                       />
                     </FormControl>
                     <div
-                      className="inline-block px-2 py-1 rounded-md text-sm border text-white"
+                      className="inline-block px-2 py-1 rounded-md text-base border text-white"
                       style={{ backgroundColor: field.value }}
                       aria-label={`Selected color: ${field.value}`}
                     >
@@ -119,17 +115,29 @@ export function FlairCreator({ onAddFlair }: FlairCreatorProps) {
                 </FormItem>
               )}
             />
-            <Button
-              type="submit"
-              size="sm"
-              variant="outline"
-              className="w-full h-8 bg-transparent cursor-pointer"
-            >
-              <Palette className="w-3 h-3 mr-1" />
-              Create
-            </Button>
-          </form>
-        </Form>
+        <Button
+          type="submit"
+          size="sm"
+          variant="outline"
+          className="w-full h-9 text-base"
+        >
+          <Palette className="w-3 h-3 mr-1" />
+          Create
+        </Button>
+      </form>
+    </Form>
+  )
+
+  if (embedded) return <div className="space-y-2">{formContent}</div>
+
+  return (
+    <Card>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-gray-900">Create Flairs</h3>
+        </div>
+        <Separator className="w-full my-2 bg-gray-400" />
+        {formContent}
       </CardContent>
     </Card>
   )

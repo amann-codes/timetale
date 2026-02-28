@@ -20,7 +20,7 @@ export function UserButton() {
 
     if (!session?.user) {
         return (
-            <Link href={'/signin'}>
+            <Link href={'/auth'}>
                 <button className="group relative inline-flex h-9 items-center justify-center overflow-hidden rounded-full px-4 font-medium shadow-xl transition-all duration-300">
                     <span className="mr-2 text-sm font-semibold">Sign In</span>
                     <LogIn className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />

@@ -4,28 +4,27 @@ export type SignUp = {
   password: string;
 };
 
-export type CreateSchedule = {
-  userId: string;
-  description: string;
-  flairIds: string[];
-};
-
 export interface Flair {
-  id: string
-  name: string
-  description: string
-  color: string
+  id: string;
+  name: string;
+  description: string;
+  color: string;
 }
 
-export type Schedule = {
+export type Task = {
   id: string;
   title: string;
-  duration: string;
-  dateTime: Date;
-  flairId: string;
-}
+  start: Date;
+  duration: number; // minutes
+  flairId?: string | null;
+  /** Populated when task is loaded with flair relation (e.g. for calendar). */
+  flair?: Flair | null;
+};
 
-export type ScheduleDOC = {
-  id: string;
-  schedule: Schedule[];
-}
+/** Input for creating a single task (manual or after AI). */
+export type TaskInput = {
+  title: string;
+  start: Date;
+  duration: number;
+  flairId?: string | null;
+};
