@@ -55,8 +55,10 @@ export function UserButton() {
             >
                 <DropdownMenuLabel className="font-normal p-3">
                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{session.user.name}</p>
-                        <p className="text-xs leading-none truncate">{session.user.email}</p>
+                        <p className="text-sm font-medium leading-none">{session.user.name ?? session.user.email ?? "User"}</p>
+                        {session.user.email && (
+                            <p className="text-xs leading-none truncate">{session.user.email}</p>
+                        )}
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-zinc-200" />

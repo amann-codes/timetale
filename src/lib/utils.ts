@@ -44,8 +44,13 @@ export function formatDuration(minutes: number): string {
   return `${h} hr ${rem} min`
 }
 
-export const getInitials = (name: string) => {
-  return name.split(" ")[0].charAt(0).toUpperCase() + name.split(" ")[1].charAt(0).toUpperCase();
+export function getInitials(name: string | null | undefined): string {
+  if (!name || typeof name !== "string") return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  const first = parts[0].charAt(0).toUpperCase();
+  const second = parts[1]?.charAt(0).toUpperCase() ?? "";
+  return first + second;
 }
 
 export function formatDateTime(dateTimeString: Date) {
